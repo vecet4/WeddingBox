@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Wedding Box</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#fafafa}
+header{background:#fff;padding:30px;text-align:center;border-bottom:1px solid #ddd}
+header h1{color:#c48b9f;margin:0}
+.section{max-width:1100px;margin:auto;padding:40px 20px}
+
+.boxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:25px}
+.box{background:#fff;padding:15px;border-radius:12px;text-align:center;
+box-shadow:0 4px 10px rgba(0,0,0,.1);cursor:pointer;transition:.3s}
+.box:hover{transform:scale(1.07)}
+.box img{width:100%;height:220px;object-fit:cover;border-radius:10px}
+.price{color:#c48b9f;font-weight:bold;font-size:18px}
+
+.panel{display:none;background:#fff;padding:25px;border-radius:12px;
+box-shadow:0 5px 20px rgba(0,0,0,.15);margin-top:30px}
+
+.extra{display:flex;justify-content:space-between;margin:6px 0}
+.total{font-weight:bold;color:#c48b9f;font-size:18px;margin-top:15px}
+
+button{background:#c48b9f;color:#fff;border:none;padding:10px 22px;
+border-radius:6px;cursor:pointer;margin-top:10px}
+.remove{background:#888}
+.buy{background:#333}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Wedding Box</h1>
+<p>Box personalizzabili per il tuo evento</p>
+</header>
+
+<section class="section">
+<div class="boxes">
+  <div class="box" onclick="openBox(10)">
+    <img src="box10.png">
+    <h3>Box Essential</h3>
+    <div class="price">€10</div>
+  </div>
+  <div class="box" onclick="openBox(20)">
+    <img src="box20.png">
+    <h3>Box Emotion</h3>
+    <div class="price">€20</div>
+  </div>
+  <div class="box" onclick="openBox(40)">
+    <img src="box40.png">
+    <h3>Box Dream</h3>
+    <div class="price">€40</div>
+  </div>
+</div>
+</section>
+
+<section class="section">
+
+<div id="customizer" class="panel">
+  <h2 id="boxTitle"></h2>
+  <h4>Incluso</h4>
+  <ul id="baseItems"></ul>
+  <h4>Extra</h4>
+  <div id="extras"></div>
+  <div class="total">Totale box: €<span id="boxTotal"></span></div>
+  <button onclick="addToCart()">Aggiungi al carrello</button>
+</div>
+
+<div id="cartPanel" class="panel">
+  <h2>🛒 Carrello</h2>
+  <div id="cartItems"></div>
+  <p class="total">Totale ordine: €<span id="orderTotal">0</span></p>
+  <button class="buy" onclick="openCheckout()">Acquista ora</button>
+</div>
+
+<div id="checkoutPanel" class="panel">
+  <h3>Scegli come contattarci</h3>
+  <button onclick="sendEmail()">📧 Email</button>
+  <button onclick="openInstagram()">📸 Instagram</button>
+</div>
+
+</section>
+
+<script>
+const data={
+  10:{name:"Box Essential",base:["Scatola","Confetti","Biglietto"],
+      extras:[
+        {n:"Candela profumata",p:5},
+        {n:"Confetti premium",p:4},
+        {n:"Nastro personalizzato",p:3}
+      ]},
+  20:{name:"Box Emotion",base:["Scatola premium","Confetti artigianali","Biglietto personalizzato"],
+      extras:[
+        {n:"Candela profumata",p:5},
+        {n:"Mini prosecco",p:7},
+        {n:"Decorazione floreale",p:6},
+        {n:"Confetti gourmet",p:5}
+      ]},
+  40:{name:"Box Dream",base:["Scatola lusso","Confetti gourmet","Candela","Biglietto personalizzato"],
+      extras:[
+        {n:"Mini prosecco",p:8},
+        {n:"Profumo ambiente",p:7},
+        {n:"Oggetto esclusivo",p:10},
+        {n:"Incisione personalizzata",p:6}
+      ]}
+};
+
+let cart=[],currentBox=null,basePrice=0,extrasSel=[];
+
+function openBox(price){
+  currentBox=data[price];
+  basePrice=price;
+  extrasSel=[];
+  customizer.style.display="block";
+  boxTitle.innerText=currentBox.name+" (€"+price+")";
+  baseItems.innerHTML=currentBox.base.map(i=>"<li>"+i+"</li>").join("");
+  extras.innerHTML="";
+  currentBox.extras.forEach(e=>{
+    extras.innerHTML+=`
+      <div class="extra">
+        <label><input type="checkbox" value="${e.p}" data-name="${e.n}" onchange="updateTotal()"> ${e.n}</label>
+        +€${e.p}
+      </div>`;
+  });
+  updateTotal();
+}
+
+function updateTotal(){
+  let t=basePrice; extrasSel=[];
+  document.querySelectorAll("#extras input:checked").forEach(i=>{
+    t+=+i.value; extrasSel.push(i.dataset.name);
+  });
+  boxTotal.innerText=t;
+}
+
+function addToCart(){
+  cart.push({name:currentBox.name,extras:[...extrasSel],total:+boxTotal.innerText});
+  renderCart();
+}
+
+function removeItem(i){
+  cart.splice(i,1);
+  renderCart();
+}
+
+function renderCart(){
+  cartItems.innerHTML="";
+  let sum=0;
+  cart.forEach((c,i)=>{
+    sum+=c.total;
+    cartItems.innerHTML+=`
+      <div>
+        <strong>${c.name}</strong> – €${c.total}<br>
+        <small>Extra: ${c.extras.join(", ")||"nessuno"}</small><br>
+        <button class="remove" onclick="removeItem(${i})">Rimuovi</button>
+        <hr>
+      </div>`;
+  });
+  orderTotal.innerText=sum;
+  cartPanel.style.display="block";
+}
+
+function openCheckout(){
+  checkoutPanel.style.display="block";
+}
+
+function buildMessage(){
+  let m="Ciao! Vorrei ordinare:\n\n";
+  cart.forEach(c=>{
+    m+=`- ${c.name} (€${c.total})\n  Extra: ${c.extras.join(", ")||"nessuno"}\n`;
+  });
+  m+=`\nTotale ordine: €${orderTotal.innerText}`;
+  return encodeURIComponent(m);
+}
+
+function sendEmail(){
+  window.location.href=
+    "mailto:kyxes18@gmail.com?subject=Ordine Wedding Box&body="+buildMessage();
+}
+
+function openInstagram(){
+  window.open("https://www.instagram.com/aipath101/","_blank");
+}
+</script>
+
+</body>
+</html>
